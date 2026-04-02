@@ -64,6 +64,10 @@
                 <i class="fa-solid fa-users w-6 text-center text-lg group-hover:scale-110 transition-transform"></i>
                 <span class="font-semibold text-sm text-left leading-tight">CRM Associados</span>
             </button>
+            <button onclick="switchTab('parceiros')" id="btn-parceiros" class="nav-btn w-full flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-app-gray60 text-app-grayB7 transition-all duration-200 group">
+                <i class="fa-solid fa-handshake-angle w-6 text-center text-lg group-hover:scale-110 transition-transform"></i>
+                <span class="font-semibold text-sm text-left leading-tight">Gestão de Parceiros</span>
+            </button>
             <button onclick="switchTab('usuarios')" id="btn-usuarios" class="nav-btn w-full flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-app-gray60 text-app-grayB7 transition-all duration-200 group">
                 <i class="fa-solid fa-user-lock w-6 text-center text-lg group-hover:scale-110 transition-transform"></i>
                 <span class="font-semibold text-sm text-left leading-tight">Gestão de Acessos</span>
@@ -269,6 +273,77 @@
                                     </tr>
                                 </thead>
                                 <tbody id="tabela-associados" class="text-sm divide-y divide-app-light">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA 7: GESTÃO DE PARCEIROS -->
+            <section id="parceiros" class="tab-content hidden animate-fade-in">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-app-dark">Gestão de Parceiros</h2>
+                        <p class="text-app-gray80 text-sm mt-1">Administre as empresas parceiras e os benefícios oferecidos.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Formulário de Cadastro de Parceiro -->
+                    <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-app-light h-fit">
+                        <h3 class="text-lg font-bold text-app-dark mb-4 border-b border-app-light pb-2">Novo Parceiro</h3>
+                        <form id="form-parceiro" onsubmit="registrarParceiro(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-app-gray60 mb-1">Nome da Empresa</label>
+                                <input type="text" id="p-nome" required placeholder="Ex: Dell Technologies" class="w-full px-4 py-2 rounded-lg border border-app-light focus:ring-2 focus:ring-app-orange outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-app-gray60 mb-1">Categoria</label>
+                                <select id="p-categoria" required class="w-full px-4 py-2 rounded-lg border border-app-light focus:ring-2 focus:ring-app-orange outline-none transition-all">
+                                    <option value="">Selecione...</option>
+                                    <option value="Tecnologia">Tecnologia</option>
+                                    <option value="Educação">Educação</option>
+                                    <option value="Saúde">Saúde</option>
+                                    <option value="Lazer">Lazer</option>
+                                    <option value="Serviços">Serviços</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-app-gray60 mb-1">Regra de Desconto / Benefício</label>
+                                <input type="text" id="p-beneficio" required placeholder="Ex: 15% de desconto em notebooks" class="w-full px-4 py-2 rounded-lg border border-app-light focus:ring-2 focus:ring-app-orange outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-app-gray60 mb-1">E-mail de Contato</label>
+                                <input type="email" id="p-email" required class="w-full px-4 py-2 rounded-lg border border-app-light focus:ring-2 focus:ring-app-orange outline-none transition-all">
+                            </div>
+                            <button type="submit" class="w-full bg-app-orange hover:opacity-90 text-white font-medium py-2.5 rounded-lg transition-colors shadow-sm mt-2">
+                                Cadastrar Parceiro
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Lista de Parceiros -->
+                    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-app-light overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-app-light flex justify-between items-center bg-[#fcfcfc]">
+                            <h3 class="font-bold text-app-dark">Parceiros Credenciados</h3>
+                            <div class="relative">
+                                <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-app-gray99 text-sm"></i>
+                                <input type="text" placeholder="Buscar parceiro..." class="pl-9 pr-4 py-1.5 rounded-lg border border-app-light text-sm focus:ring-2 focus:ring-app-orange outline-none">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-[#fcfcfc] text-app-gray80 text-xs uppercase tracking-wider">
+                                        <th class="px-6 py-3 font-medium">Empresa / Categoria</th>
+                                        <th class="px-6 py-3 font-medium">Benefício Principal</th>
+                                        <th class="px-6 py-3 font-medium">Status</th>
+                                        <th class="px-6 py-3 font-medium text-right">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-parceiros" class="text-sm divide-y divide-app-light">
                                     <!-- Populated by JS -->
                                 </tbody>
                             </table>
@@ -934,7 +1009,64 @@
             showToast(`Acesso criado para ${nome}!`, 'success');
         }
 
-        // --- 4. Dados Simulados (CRM) ---
+        // --- 4. Lógica de Gestão de Parceiros ---
+        let parceirosData = [
+            { id: 1, nome: "Dell Technologies", categoria: "Tecnologia", beneficio: "15% Off em Notebooks e Monitores", status: "Ativo" },
+            { id: 2, nome: "Easy English School", categoria: "Educação", beneficio: "20% de desconto na mensalidade", status: "Ativo" },
+            { id: 3, nome: "Clínica Odonto Prime", categoria: "Saúde", beneficio: "10% de desconto em tratamentos", status: "Ativo" }
+        ];
+
+        function renderParceiros() {
+            const tbody = document.getElementById('tabela-parceiros');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            parceirosData.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition-colors';
+                tr.innerHTML = `
+                    <td class="px-6 py-4">
+                        <p class="font-bold text-app-dark">${p.nome}</p>
+                        <p class="text-xs text-app-gray80">${p.categoria}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="text-sm text-app-gray60">${p.beneficio}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-md text-xs font-semibold">${p.status}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button class="text-app-gray99 hover:text-app-orange transition px-2" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                        <button class="text-app-gray99 hover:text-red-600 transition px-2" title="Remover"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function registrarParceiro(event) {
+            event.preventDefault();
+            
+            const nome = document.getElementById('p-nome').value;
+            const categoria = document.getElementById('p-categoria').value;
+            const beneficio = document.getElementById('p-beneficio').value;
+
+            const novoParceiro = {
+                id: parceirosData.length + 1,
+                nome: nome,
+                categoria: categoria,
+                beneficio: beneficio,
+                status: "Ativo"
+            };
+
+            parceirosData.push(novoParceiro);
+            renderParceiros();
+            
+            event.target.reset();
+            showToast(`${nome} cadastrado como novo parceiro!`, 'success');
+        }
+
+        // --- 5. Dados Simulados (CRM) ---
         let associadosData = [
             { id: 1, nome: "Carlos Eduardo Silva", crc: "SP-123456/O-1", email: "carlos@contabilidade.com", telefone: "(11) 98765-4321", status: "Ativo" },
             { id: 2, nome: "Ana Beatriz Mendes", crc: "SP-654321/O-2", email: "ana@amendescont.com.br", telefone: "(11) 91234-5678", status: "Ativo" },
@@ -1056,6 +1188,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             renderAssociados();
+            renderParceiros();
             renderUsuariosSistema();
         });
     </script>
