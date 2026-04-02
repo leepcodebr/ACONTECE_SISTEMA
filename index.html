@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssocCont - Sistema de Gestão para Associação de Contadores</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        app: {
+                            dark: '#383842',
+                            orange: '#fa5a1d',
+                            gray80: '#808080',
+                            gray60: '#606060',
+                            gray99: '#999999',
+                            grayB7: '#B7B7B9',
+                            light: '#DDDFE2'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome para Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .toast-enter { transform: translateY(100%); opacity: 0; }
+        .toast-enter-active { transform: translateY(0); opacity: 1; transition: all 0.3s ease-out; }
+        .toast-leave { transform: translateY(0); opacity: 1; }
+        .toast-leave-active { transform: translateY(100%); opacity: 0; transition: all 0.3s ease-in; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden text-app-dark bg-[#f8f9fa]">
+
+    <!-- Sidebar / Menu de Navegação -->
+    <aside class="w-72 bg-app-dark text-white flex flex-col transition-all duration-300 z-20 shadow-xl">
+        <div class="p-6 border-b border-app-gray60">
+            <img src="logo_acontece-1-1024x280.png" alt="Logo ACONTECE" class="w-full h-auto">
+            <p class="text-[10px] text-app-grayB7 mt-2 text-center uppercase tracking-widest">Gestão de Associados</p>
+        </div>
+
+        <nav class="flex-1 p-4 space-y-3 overflow-y-auto">
+            <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn w-full flex items-center gap-4 px-4 py-3.5 rounded-xl bg-app-orange text-white transition-all duration-200 shadow-sm group">
+                <i class="fa-solid fa-chart-pie w-6 text-center text-lg group-hover:scale-110 transition-transform"></i>
+                <span class="font-semibold text-sm">Visão Geral</span>
+            </button>
+            <button onclick="switchTab('associados')" id="btn-associados" class="nav-btn w-full flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-app-gray60 text-app-grayB7 transition-all duration-200 group">
+                <i class="fa-solid fa-users w-6 text-center text-lg group-hover:scale-110 transition-transform"></i>
+                <span class="font-semibold text-sm text-left leading-tight">CRM Associados</span>
+            </button>
+            <button onclick="switchTab('usuarios')" id="btn-usuarios" class="nav-btn w-full flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-app-gray60 text-app-grayB7 transition-all duration-200 group">
+                <i class="fa-solid fa-user-lock w-6 text-center text-lg group-hover:scale-110 transition-transform"></i>
+                <span class="font-semibold text-sm text-left leading-tight">Gestão de Acessos</span>
+            </button>
+            <button onclick="switchTab('financeiro')" id="btn-financeiro" class="nav-btn w-full flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-app-gray60 text-app-grayB7 transition-all duration-200 group">
+                <i class="fa-solid fa-file-invoice-dollar w-6 text-center text-lg group-hover:scale-110 transition-transform"></i>
+                <span class="font-semibold text-sm text-left leading-tight">Financeiro e Cobrança</span>
+            </button>
+            <button onclick="switchTab('beneficios')" id="btn-beneficios" class="nav-btn w-full flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-app-gray60 text-app-grayB7 transition-all duration-200 group">
+                <i class="fa-solid fa-handshake w-6 text-center text-lg group-hover:scale-110 transition-transform"></i>
+                <span class="font-semibold text-sm text-left leading-tight">Benefícios e Uso</span>
+            </button>
+        </nav>
+
+        <button onclick="switchTab('configuracoes')" id="btn-configuracoes" class="nav-btn w-full p-6 border-t border-app-gray60 bg-black/10 hover:bg-black/20 transition-all text-left group">
+            <div class="flex items-center gap-4">
+                <img src="https://ui-avatars.com/api/?name=Admin+User&background=fa5a1d&color=fff" alt="User" class="w-11 h-11 rounded-full border-2 border-app-orange shadow-md flex-shrink-0 group-hover:scale-110 transition-transform">
+                <div class="overflow-hidden">
+                    <p id="sidebar-user-name" class="text-sm font-bold text-white truncate">Administrador</p>
+                    <p id="sidebar-user-email" class="text-xs text-app-gray99 truncate">admin@assoccont.org</p>
+                </div>
+                <i class="fa-solid fa-gear text-app-gray60 ml-auto group-hover:text-app-orange transition-colors"></i>
+            </div>
+        </button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden bg-[#f8f9fa] relative">
+        
+        <!-- Header Mobile Toggle -->
+        <header class="md:hidden bg-white p-4 shadow-sm flex items-center justify-between z-10 border-b border-app-light">
+            <img src="logo_acontece-1-1024x280.png" alt="Logo ACONTECE" class="h-8 w-auto">
+            <button class="text-app-gray60"><i class="fa-solid fa-bars text-xl"></i></button>
+        </header>
+
+        <!-- Área de Conteúdo das Abas -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-8">
+
+            <!-- ABA 1: DASHBOARD (VISÃO GERAL) -->
+            <section id="dashboard" class="tab-content animate-fade-in">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-app-dark">Visão Geral</h2>
+                        <p class="text-app-gray80 text-sm mt-1">Resumo financeiro e associativo da instituição.</p>
+                    </div>
+                    <button onclick="showToast('Relatório gerado com sucesso!', 'success')" class="bg-app-orange hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
+                        <i class="fa-solid fa-download mr-2"></i> Exportar Relatório
+                    </button>
+                </div>
+
+                <!-- Cards de Indicadores -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-app-light flex flex-col">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-lg bg-orange-50 text-app-orange flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-app-gray80">Total de Associados</p>
+                                <h3 class="text-2xl font-bold text-app-dark">342</h3>
+                            </div>
+                        </div>
+                        <p class="text-xs text-green-600 font-medium mt-auto"><i class="fa-solid fa-arrow-up mr-1"></i> +12 este mês</p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-app-light flex flex-col">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-lg bg-red-50 text-red-500 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-chart-line"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-app-gray80">Inadimplência (Mês Ant.)</p>
+                                <h3 class="text-2xl font-bold text-app-dark">8.4%</h3>
+                            </div>
+                        </div>
+                        <p class="text-xs text-red-500 font-medium mt-auto"><i class="fa-solid fa-arrow-up mr-1"></i> +0.5% em relação ao anterior</p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-app-light flex flex-col">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-wallet"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-app-gray80">Receita Mês Atual</p>
+                                <h3 class="text-2xl font-bold text-app-dark">R$ 41.500</h3>
+                            </div>
+                        </div>
+                        <div class="w-full bg-app-light rounded-full h-1.5 mt-2 mb-1">
+                            <div class="bg-emerald-500 h-1.5 rounded-full" style="width: 85%"></div>
+                        </div>
+                        <p class="text-xs text-app-gray99 mt-auto">85% da meta atingida</p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-app-light flex flex-col">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-calendar-check"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-app-gray80">Previsão Próx. Mês</p>
+                                <h3 class="text-2xl font-bold text-app-dark">R$ 45.200</h3>
+                            </div>
+                        </div>
+                        <p class="text-xs text-indigo-600 font-medium mt-auto"><i class="fa-solid fa-clock mr-1"></i> Baseado em anuidades ativas</p>
+                    </div>
+                </div>
+
+                <!-- Resumo de Anuidades -->
+                <div class="bg-white rounded-xl shadow-sm border border-app-light p-6">
+                    <h3 class="text-lg font-bold text-app-dark mb-4">Situação das Anuidades (Ano Atual)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Nível II: Cards Principais -->
+                        <div class="p-4 rounded-lg border border-app-light flex items-center justify-between bg-gray-50/30">
+                            <div>
+                                <p class="text-xs text-app-gray80 uppercase font-semibold tracking-wider">Total Emitidas</p>
+                                <p class="text-2xl font-bold text-app-dark mt-1">4.104 <span class="text-xs font-normal text-app-gray99 lowercase">parcelas</span></p>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-white border border-app-light shadow-sm flex items-center justify-center text-app-gray80 text-xl"><i class="fa-solid fa-receipt"></i></div>
+                        </div>
+
+                        <div class="p-4 rounded-lg border border-emerald-100 bg-emerald-50/20 flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-emerald-700 uppercase font-semibold tracking-wider">Parcelas Pagas</p>
+                                <p class="text-2xl font-bold text-emerald-600 mt-1">3.750 <span class="text-xs font-normal text-emerald-400 lowercase">parcelas</span></p>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-white border border-emerald-100 shadow-sm flex items-center justify-center text-emerald-600 text-xl"><i class="fa-solid fa-check-double"></i></div>
+                        </div>
+
+                        <!-- Nível III: Microcards de Detalhamento -->
+                        <div class="p-4 rounded-lg border border-indigo-100 bg-indigo-50/30 flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-indigo-800 uppercase font-semibold tracking-wider">Em Aberto <span class="text-[10px] font-normal opacity-70">(A Vencer)</span></p>
+                                <p class="text-2xl font-bold text-indigo-600 mt-1">210 <span class="text-xs font-normal text-indigo-400 lowercase">parcelas</span></p>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-white border border-indigo-100 shadow-sm flex items-center justify-center text-indigo-500 text-xl"><i class="fa-solid fa-clock"></i></div>
+                        </div>
+
+                        <div class="p-4 rounded-lg border border-red-100 bg-red-50/20 flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-red-700 uppercase font-semibold tracking-wider">Em Atraso <span class="text-[10px] font-normal opacity-70">(Vencidas)</span></p>
+                                <p class="text-2xl font-bold text-red-600 mt-1">144 <span class="text-xs font-normal text-red-400 lowercase">parcelas</span></p>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-white border border-red-100 shadow-sm flex items-center justify-center text-red-500 text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA 2: CRM / ASSOCIADOS -->
+            <section id="associados" class="tab-content hidden animate-fade-in">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-app-dark">CRM de Associados</h2>
+                        <p class="text-app-gray80 text-sm mt-1">Gerencie o cadastro dos contadores associados.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Formulário de Cadastro -->
+                    <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-app-light h-fit">
+                        <h3 class="text-lg font-bold text-app-dark mb-4 border-b border-app-light pb-2">Novo Associado</h3>
+                        <form id="form-associado" onsubmit="registrarAssociado(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-app-gray60 mb-1">Nome Completo</label>
+                                <input type="text" id="add-nome" required class="w-full px-4 py-2 rounded-lg border border-app-light focus:ring-2 focus:ring-app-orange outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-app-gray60 mb-1">Registro CRC</label>
+                                <input type="text" id="add-crc" required class="w-full px-4 py-2 rounded-lg border border-app-light focus:ring-2 focus:ring-app-orange outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-app-gray60 mb-1">E-mail</label>
+                                <input type="email" id="add-email" required class="w-full px-4 py-2 rounded-lg border border-app-light focus:ring-2 focus:ring-app-orange outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-app-gray60 mb-1">Telefone / WhatsApp</label>
+                                <input type="text" id="add-telefone" class="w-full px-4 py-2 rounded-lg border border-app-light focus:ring-2 focus:ring-app-orange outline-none transition-all">
+                            </div>
+                            <button type="submit" class="w-full bg-app-orange hover:opacity-90 text-white font-medium py-2.5 rounded-lg transition-colors shadow-sm mt-2">
+                                Salvar Cadastro
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Lista de Associados -->
+                    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-app-light overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-app-light flex justify-between items-center bg-[#fcfcfc]">
+                            <h3 class="font-bold text-app-dark">Associados Cadastrados</h3>
+                            <div class="relative">
+                                <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-app-gray99 text-sm"></i>
+                                <input type="text" placeholder="Buscar associado..." class="pl-9 pr-4 py-1.5 rounded-lg border border-app-light text-sm focus:ring-2 focus:ring-app-orange outline-none">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-[#fcfcfc] text-app-gray80 text-xs uppercase tracking-wider">
+                                        <th class="px-6 py-3 font-medium">Nome / CRC</th>
+                                        <th class="px-6 py-3 font-medium">Contato</th>
+                                        <th class="px-6 py-3 font-medium">Status</th>
+                                        <th class="px-6 py-3 font-medium text-right">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-associados" class="text-sm divide-y divide-app-light">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA 3: FINANCEIRO E COBRANÇA -->
+            <section id="financeiro" class="tab-content hidden animate-fade-in">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-app-dark">Financeiro e Cobrança</h2>
+                        <p class="text-app-gray80 text-sm mt-1">Gestão de recebimentos, emissão de boletos e réguas de cobrança.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="showToast('E-mails de cobrança em lote enviados!', 'success')" class="bg-app-dark hover:bg-black text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
+                            <i class="fa-solid fa-envelope mr-2"></i> Cobrança em Lote
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-app-light overflow-hidden">
+                    <div class="p-6 border-b border-app-light flex justify-between items-center flex-wrap gap-4">
+                        <h3 class="font-bold text-app-dark">Mensalidades / Anuidades Pendentes</h3>
+                        <div class="flex gap-2">
+                            <select class="px-3 py-1.5 border border-app-light rounded-lg text-sm outline-none text-app-gray60">
+                                <option>Todos os Status</option>
+                                <option>Vence Hoje</option>
+                                <option>Em Atraso</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-[#fcfcfc] text-app-gray80 text-xs uppercase tracking-wider">
+                                    <th class="px-6 py-3 font-medium">Associado</th>
+                                    <th class="px-6 py-3 font-medium">Referência</th>
+                                    <th class="px-6 py-3 font-medium">Vencimento</th>
+                                    <th class="px-6 py-3 font-medium">Valor</th>
+                                    <th class="px-6 py-3 font-medium">Status</th>
+                                    <th class="px-6 py-3 font-medium text-right">Ferramentas de Cobrança</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm divide-y divide-app-light">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 font-medium text-app-dark">Carlos Eduardo Silva</td>
+                                    <td class="px-6 py-4 text-app-gray80">Março/2026</td>
+                                    <td class="px-6 py-4 text-red-500 font-medium">10/03/2026</td>
+                                    <td class="px-6 py-4 font-medium text-app-dark">R$ 120,00</td>
+                                    <td class="px-6 py-4"><span class="px-2 py-1 bg-red-100 text-red-700 rounded-md text-xs font-semibold">Em Atraso</span></td>
+                                    <td class="px-6 py-4 text-right space-x-2">
+                                        <button onclick="enviarBoleto('Carlos Eduardo Silva')" class="text-green-600 hover:bg-green-50 px-2 py-1 rounded transition" title="Enviar Boleto WhatsApp"><i class="fa-brands fa-whatsapp text-lg"></i></button>
+                                        <button onclick="enviarEmailCobranca('Carlos Eduardo Silva')" class="text-app-gray60 hover:bg-gray-100 px-2 py-1 rounded transition" title="Enviar E-mail"><i class="fa-solid fa-envelope text-lg"></i></button>
+                                        <button onclick="showToast('Boleto PDF gerado!', 'info')" class="text-app-gray60 hover:bg-gray-100 px-2 py-1 rounded transition" title="Baixar PDF"><i class="fa-solid fa-file-pdf text-lg"></i></button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 font-medium text-app-dark">Mariana de Souza</td>
+                                    <td class="px-6 py-4 text-app-gray80">Abril/2026</td>
+                                    <td class="px-6 py-4 text-amber-600 font-medium">10/04/2026</td>
+                                    <td class="px-6 py-4 font-medium text-app-dark">R$ 120,00</td>
+                                    <td class="px-6 py-4"><span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-md text-xs font-semibold">A Vencer</span></td>
+                                    <td class="px-6 py-4 text-right space-x-2">
+                                        <button onclick="enviarBoleto('Mariana de Souza')" class="text-green-600 hover:bg-green-50 px-2 py-1 rounded transition" title="Enviar Boleto WhatsApp"><i class="fa-brands fa-whatsapp text-lg"></i></button>
+                                        <button onclick="enviarEmailCobranca('Mariana de Souza')" class="text-app-gray60 hover:bg-gray-100 px-2 py-1 rounded transition" title="Enviar E-mail"><i class="fa-solid fa-envelope text-lg"></i></button>
+                                        <button onclick="showToast('Boleto PDF gerado!', 'info')" class="text-app-gray60 hover:bg-gray-100 px-2 py-1 rounded transition" title="Baixar PDF"><i class="fa-solid fa-file-pdf text-lg"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA 4: BENEFÍCIOS E USO -->
+            <section id="beneficios" class="tab-content hidden animate-fade-in">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-app-dark">Benefícios e Uso de Parcerias</h2>
+                        <p class="text-app-gray80 text-sm mt-1">Acompanhe as vantagens financeiras geradas para os associados.</p>
+                    </div>
+                    <button onclick="showToast('Modal de registro aberto', 'info')" class="bg-app-dark hover:bg-black text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
+                        <i class="fa-solid fa-plus mr-2"></i> Registrar Uso
+                    </button>
+                </div>
+
+                <!-- Resumo Benefícios -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-gradient-to-br from-app-dark to-gray-800 rounded-xl p-6 text-white shadow-md border-b-4 border-app-orange">
+                        <p class="text-app-grayB7 text-sm font-medium mb-1">Total Economizado (Ano)</p>
+                        <h3 class="text-3xl font-bold text-white">R$ 24.580,00</h3>
+                        <p class="text-xs mt-4 text-app-gray99"><i class="fa-solid fa-chart-line mr-1"></i> Pelos associados da rede</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 border border-app-light shadow-sm flex items-center gap-4">
+                        <div class="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center text-2xl text-app-orange">
+                            <i class="fa-solid fa-handshake"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-app-gray80 font-medium">Parceiros Ativos</p>
+                            <h3 class="text-2xl font-bold text-app-dark">48</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 border border-app-light shadow-sm flex items-center gap-4">
+                        <div class="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center text-2xl text-app-gray60">
+                            <i class="fa-solid fa-ticket"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-app-gray80 font-medium">Usos Registrados (Mês)</p>
+                            <h3 class="text-2xl font-bold text-app-dark">112</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-app-light overflow-hidden">
+                    <div class="p-4 border-b border-app-light bg-[#fcfcfc]">
+                        <h3 class="font-bold text-app-dark">Histórico de Uso por Associado</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-[#fcfcfc] text-app-gray80 text-xs uppercase tracking-wider">
+                                    <th class="px-6 py-3 font-medium">Data</th>
+                                    <th class="px-6 py-3 font-medium">Associado</th>
+                                    <th class="px-6 py-3 font-medium">Parceiro / Serviço</th>
+                                    <th class="px-6 py-3 font-medium">Regra de Desconto</th>
+                                    <th class="px-6 py-3 font-medium text-emerald-600">Valor Economizado</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm divide-y divide-app-light">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 text-app-gray80">01/04/2026</td>
+                                    <td class="px-6 py-4 font-medium text-app-dark">Carlos Eduardo Silva</td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fa-solid fa-tooth text-app-gray60"></i>
+                                            <span>Clínica Odonto Prime</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4"><span class="bg-gray-100 text-app-gray60 px-2 py-1 rounded text-xs">10% Off Tratamentos</span></td>
+                                    <td class="px-6 py-4 font-bold text-emerald-600">R$ 150,00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA 5: CONFIGURAÇÕES / PERFIL -->
+            <section id="configuracoes" class="tab-content hidden animate-fade-in">
+                <div class="max-w-4xl">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-app-dark">Configurações do Perfil</h2>
+                        <p class="text-app-gray80 text-sm mt-1">Gerencie suas informações de acesso e preferências do sistema.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Card de Informações Públicas -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <div class="bg-white p-8 rounded-2xl shadow-sm border border-app-light">
+                                <h3 class="text-lg font-bold text-app-dark mb-6 flex items-center gap-2">
+                                    <i class="fa-solid fa-user-gear text-app-orange"></i> Informações Pessoais
+                                </h3>
+                                <form onsubmit="salvarConfiguracoes(event)" class="space-y-6">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-semibold text-app-gray60 mb-2">Nome de Exibição</label>
+                                            <input type="text" id="conf-nome" value="Administrador" class="w-full px-4 py-2.5 rounded-xl border border-app-light focus:ring-2 focus:ring-app-orange outline-none transition-all bg-gray-50/50">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-semibold text-app-gray60 mb-2">E-mail de Acesso</label>
+                                            <input type="email" id="conf-email" value="admin@assoccont.org" class="w-full px-4 py-2.5 rounded-xl border border-app-light focus:ring-2 focus:ring-app-orange outline-none transition-all bg-gray-50/50">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="pt-4 border-t border-app-light flex justify-end">
+                                        <button type="submit" class="bg-app-orange hover:opacity-90 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95">
+                                            Salvar Alterações
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="bg-white p-8 rounded-2xl shadow-sm border border-app-light">
+                                <h3 class="text-lg font-bold text-app-dark mb-6 flex items-center gap-2">
+                                    <i class="fa-solid fa-shield-halved text-app-orange"></i> Segurança
+                                </h3>
+                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-app-light">
+                                    <div>
+                                        <p class="font-bold text-app-dark text-sm">Senha de Acesso</p>
+                                        <p class="text-xs text-app-gray80 mt-1">Recomendamos trocar a senha a cada 90 dias.</p>
+                                    </div>
+                                    <button onclick="showToast('Link de redefinição enviado para seu e-mail', 'info')" class="text-app-orange font-bold text-xs uppercase tracking-wider hover:underline">Alterar Senha</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Lateral de Status -->
+                        <div class="lg:col-span-1">
+                            <div class="bg-app-dark rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
+                                <div class="relative z-10">
+                                    <div class="w-20 h-20 bg-app-orange rounded-2xl flex items-center justify-center text-3xl font-bold mb-6 shadow-2xl mx-auto rotate-3">
+                                        <i class="fa-solid fa-user-shield"></i>
+                                    </div>
+                                    <div class="text-center">
+                                        <p id="conf-status-nome" class="text-xl font-bold">Administrador</p>
+                                        <p class="text-app-grayB7 text-xs mt-1">Nível de Acesso: Total</p>
+                                        <div class="mt-6 py-2 px-4 bg-white/10 rounded-full inline-block text-[10px] uppercase tracking-widest font-bold">
+                                            Status: Online
+                                        </div>
+                                    </div>
+                                    <div class="mt-8 pt-8 border-t border-white/10 text-xs text-app-grayB7 space-y-3">
+                                        <p class="flex items-center gap-2"><i class="fa-solid fa-calendar-check text-app-orange"></i> Último acesso: Hoje, 08:42</p>
+                                        <p class="flex items-center gap-2"><i class="fa-solid fa-code-branch text-app-orange"></i> Versão do Sistema: v1.2.5-stable</p>
+                                    </div>
+                                </div>
+                                <!-- Background decorativo -->
+                                <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-app-orange/10 rounded-full blur-3xl"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- ABA 6: GESTÃO DE ACESSOS / USUÁRIOS INTERNOS -->
+            <section id="usuarios" class="tab-content hidden animate-fade-in">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-app-dark">Gestão de Acessos</h2>
+                        <p class="text-app-gray80 text-sm mt-1">Controle quem tem acesso administrativo ao sistema.</p>
+                    </div>
+                    <button onclick="toggleUserModal(true)" class="bg-app-orange hover:opacity-90 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus"></i> Novo Usuário
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-app-light overflow-hidden flex flex-col">
+                    <div class="p-6 border-b border-app-light bg-gray-50/50 flex justify-between items-center">
+                        <h3 class="font-bold text-app-dark">Usuários com Acesso</h3>
+                        <span class="px-3 py-1 bg-app-orange/10 text-app-orange text-xs font-bold rounded-full uppercase tracking-widest">Controle Interno</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50/50 text-app-gray80 text-[10px] uppercase tracking-[0.2em]">
+                                    <th class="px-8 py-4 font-bold">Usuário</th>
+                                    <th class="px-8 py-4 font-bold">Nível de Acesso</th>
+                                    <th class="px-8 py-4 font-bold text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-usuarios-sistema" class="text-sm divide-y divide-app-light">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+        
+        <!-- MODAL: NOVO USUÁRIO DO SISTEMA -->
+        <div id="modal-usuario" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4 bg-app-dark/60 backdrop-blur-sm animate-fade-in">
+            <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-slide-up">
+                <div class="p-6 border-b border-app-light flex justify-between items-center bg-gray-50">
+                    <h3 class="font-bold text-app-dark flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus text-app-orange"></i> Criar Novo Usuário
+                    </h3>
+                    <button onclick="toggleUserModal(false)" class="text-app-gray80 hover:text-app-dark transition-colors">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+                <form onsubmit="registrarUsuarioSistema(event)" class="p-6 space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-app-gray60 mb-2">Nome Completo</label>
+                        <input type="text" id="user-nome" required placeholder="Ex: João Diretor" class="w-full px-4 py-2.5 rounded-xl border border-app-light focus:ring-2 focus:ring-app-orange outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-app-gray60 mb-2">E-mail Corporativo</label>
+                        <input type="email" id="user-email" required placeholder="diretor@acontece.org" class="w-full px-4 py-2.5 rounded-xl border border-app-light focus:ring-2 focus:ring-app-orange outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-app-gray60 mb-2">Senha Temporária</label>
+                        <div class="relative">
+                            <input type="text" id="user-senha" required placeholder="Senha de primeiro acesso" class="w-full px-4 py-2.5 rounded-xl border border-app-light focus:ring-2 focus:ring-app-orange outline-none transition-all pr-12">
+                            <button type="button" onclick="gerarSenhaAleatoria()" class="absolute right-3 top-1/2 -translate-y-1/2 text-app-orange hover:text-orange-600 transition-colors" title="Gerar Senha Aleatória">
+                                <i class="fa-solid fa-shuffle"></i>
+                            </button>
+                        </div>
+                        <p class="text-[10px] text-app-gray99 mt-2 italic">* O usuário deverá alterar a senha no primeiro acesso.</p>
+                    </div>
+                    
+                    <div class="pt-4 flex gap-3">
+                        <button type="button" onclick="toggleUserModal(false)" class="flex-1 px-4 py-2.5 rounded-xl border border-app-light font-bold text-app-gray80 hover:bg-gray-50 transition-all">Cancelar</button>
+                        <button type="submit" class="flex-1 bg-app-orange hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all shadow-md">Criar Acesso</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Contenedor Toast -->
+        <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    </main>
+
+    <script>
+        // --- 1. Lógica de Navegação das Abas ---
+        function switchTab(tabId) {
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            const buttons = document.querySelectorAll('.nav-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-app-orange', 'text-white');
+                btn.classList.add('text-app-grayB7', 'hover:bg-app-gray60');
+            });
+
+            document.getElementById(tabId).classList.remove('hidden');
+
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-app-grayB7', 'hover:bg-app-gray60');
+                activeBtn.classList.add('bg-app-orange', 'text-white');
+            }
+        }
+
+        // --- 2. Lógica de Configurações ---
+        function salvarConfiguracoes(event) {
+            event.preventDefault();
+            
+            const nome = document.getElementById('conf-nome').value;
+            const email = document.getElementById('conf-email').value;
+
+            // Atualiza Sidebar
+            document.getElementById('sidebar-user-name').innerText = nome;
+            document.getElementById('sidebar-user-email').innerText = email;
+            
+            // Atualiza card de status na tela de config
+            document.getElementById('conf-status-nome').innerText = nome;
+
+            showToast('Configurações salvas com sucesso!', 'success');
+        }
+
+        // --- 3. Lógica de Gestão de Usuários (Acessos) ---
+        let usuariosSistemaData = [
+            { id: 1, nome: "Administrador Geral", email: "admin@acontece.org", nivel: "Total / Admin" },
+            { id: 2, nome: "Ricardo Oliveira", email: "ricardo.diretor@acontece.org", nivel: "Diretoria" }
+        ];
+
+        function toggleUserModal(show) {
+            const modal = document.getElementById('modal-usuario');
+            if (show) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            } else {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function gerarSenhaAleatoria() {
+            const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%";
+            let senha = "";
+            for (let i = 0; i < 10; i++) {
+                senha += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('user-senha').value = senha;
+            showToast('Senha temporária gerada!', 'info');
+        }
+
+        function renderUsuariosSistema() {
+            const tbody = document.getElementById('tabela-usuarios-sistema');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            usuariosSistemaData.forEach(user => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition-colors';
+                tr.innerHTML = `
+                    <td class="px-8 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 bg-app-dark rounded-lg flex items-center justify-center text-white text-xs font-bold">
+                                ${user.nome.charAt(0)}
+                            </div>
+                            <div>
+                                <p class="font-bold text-app-dark">${user.nome}</p>
+                                <p class="text-xs text-app-gray80">${user.email}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-8 py-4">
+                        <span class="px-3 py-1 bg-gray-100 text-app-gray80 rounded-full text-[10px] font-bold uppercase tracking-wider border border-app-light">
+                            ${user.nivel}
+                        </span>
+                    </td>
+                    <td class="px-8 py-4 text-right">
+                        <button class="text-app-gray99 hover:text-red-600 transition p-2" title="Remover Acesso"><i class="fa-solid fa-user-minus"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function registrarUsuarioSistema(event) {
+            event.preventDefault();
+            
+            const nome = document.getElementById('user-nome').value;
+            const email = document.getElementById('user-email').value;
+
+            const novoUsuario = {
+                id: usuariosSistemaData.length + 1,
+                nome: nome,
+                email: email,
+                nivel: "Diretoria"
+            };
+
+            usuariosSistemaData.push(novoUsuario);
+            renderUsuariosSistema();
+            
+            toggleUserModal(false);
+            event.target.reset();
+            showToast(`Acesso criado para ${nome}!`, 'success');
+        }
+
+        // --- 4. Dados Simulados (CRM) ---
+        let associadosData = [
+            { id: 1, nome: "Carlos Eduardo Silva", crc: "SP-123456/O-1", email: "carlos@contabilidade.com", telefone: "(11) 98765-4321", status: "Ativo" },
+            { id: 2, nome: "Ana Beatriz Mendes", crc: "SP-654321/O-2", email: "ana@amendescont.com.br", telefone: "(11) 91234-5678", status: "Ativo" },
+            { id: 3, nome: "Roberto Almeida", crc: "SP-987654/O-3", email: "roberto@almeidacont.com", telefone: "(11) 99988-7766", status: "Inadimplente" },
+            { id: 4, nome: "Juliana Ferreira", crc: "RJ-112233/O-4", email: "juliana@ferreiracont.com", telefone: "(21) 98877-6655", status: "Ativo" },
+            { id: 5, nome: "Marcos Oliveira", crc: "MG-445566/O-5", email: "marcos@oliveira.cnt.br", telefone: "(31) 97766-5544", status: "Ativo" },
+            { id: 6, nome: "Fernanda Santos", crc: "PR-778899/O-6", email: "fernanda@santoscont.com", telefone: "(41) 96655-4433", status: "Inadimplente" },
+            { id: 7, nome: "Ricardo Gomes", crc: "RS-121212/O-7", email: "ricardo@gomesassoc.com", telefone: "(51) 95544-3322", status: "Ativo" },
+            { id: 8, nome: "Camila Rocha", crc: "SC-343434/O-8", email: "camila@rochaauditoria.com", telefone: "(48) 94433-2211", status: "Ativo" },
+            { id: 9, nome: "Paulo Souza", crc: "BA-565656/O-9", email: "paulo@souzacontabil.com", telefone: "(71) 93322-1100", status: "Ativo" },
+            { id: 10, nome: "Beatriz Lima", crc: "PE-787878/O-10", email: "beatriz@limafiscal.com", telefone: "(81) 92211-0099", status: "Inadimplente" },
+            { id: 11, nome: "André Costa", crc: "CE-909090/O-11", email: "andre@costaescritorio.com", telefone: "(85) 91100-9988", status: "Ativo" },
+            { id: 12, nome: "Letícia Martins", crc: "DF-131313/O-12", email: "leticia@martinscont.com", telefone: "(61) 90099-8877", status: "Ativo" },
+            { id: 13, nome: "Fábio Junior", crc: "GO-141414/O-13", email: "fabio@juniorassessoria.com", telefone: "(62) 98988-7766", status: "Ativo" },
+            { id: 14, nome: "Patrícia Antunes", crc: "ES-151515/O-14", email: "patricia@antunescont.com", telefone: "(27) 97977-6655", status: "Inadimplente" },
+            { id: 15, nome: "Gustavo Pereira", crc: "AM-161616/O-15", email: "gustavo@pereira.cnt.br", telefone: "(92) 96966-5544", status: "Ativo" }
+        ];
+
+        function renderAssociados() {
+            const tbody = document.getElementById('tabela-associados');
+            tbody.innerHTML = ''; 
+
+            associadosData.forEach(assoc => {
+                const statusClass = assoc.status === 'Ativo' 
+                    ? 'bg-emerald-100 text-emerald-700' 
+                    : 'bg-red-100 text-red-700';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition-colors';
+                tr.innerHTML = `
+                    <td class="px-6 py-4">
+                        <p class="font-medium text-app-dark">${assoc.nome}</p>
+                        <p class="text-xs text-app-gray80">CRC: ${assoc.crc}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="text-sm text-app-gray60">${assoc.email}</p>
+                        <p class="text-xs text-app-gray99">${assoc.telefone}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 rounded-md text-xs font-semibold ${statusClass}">${assoc.status}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button class="text-app-gray99 hover:text-app-orange transition px-2" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                        <button class="text-app-gray99 hover:text-red-600 transition px-2" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- 5. Função Cadastrar ---
+        function registrarAssociado(event) {
+            event.preventDefault(); 
+            
+            const nome = document.getElementById('add-nome').value;
+            const crc = document.getElementById('add-crc').value;
+            const email = document.getElementById('add-email').value;
+            const telefone = document.getElementById('add-telefone').value;
+
+            const novoAssociado = {
+                id: associadosData.length + 1,
+                nome: nome,
+                crc: crc,
+                email: email,
+                telefone: telefone,
+                status: "Ativo" 
+            };
+
+            associadosData.push(novoAssociado);
+            renderAssociados(); 
+            
+            document.getElementById('form-associado').reset(); 
+            showToast('Associado cadastrado com sucesso!', 'success');
+        }
+
+        // --- 6. Simulações de Cobrança ---
+        function enviarBoleto(nome) {
+            showToast(`Boleto enviado via WhatsApp para ${nome}`, 'success');
+        }
+
+        function enviarEmailCobranca(nome) {
+            showToast(`E-mail de cobrança enviado para ${nome}`, 'info');
+        }
+
+        // --- 7. Sistema de Notificações ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgClass = 'bg-app-dark text-white';
+            let icon = '<i class="fa-solid fa-circle-info text-app-orange"></i>';
+
+            if (type === 'success') {
+                bgClass = 'bg-white border-l-4 border-emerald-500 shadow-lg text-app-dark';
+                icon = '<i class="fa-solid fa-circle-check text-emerald-500"></i>';
+            } else if (type === 'error') {
+                bgClass = 'bg-white border-l-4 border-red-500 shadow-lg text-app-dark';
+                icon = '<i class="fa-solid fa-circle-xmark text-red-500"></i>';
+            } else if (type === 'info') {
+                bgClass = 'bg-white border-l-4 border-app-orange shadow-lg text-app-dark';
+            }
+
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded shadow-md pointer-events-auto toast-enter-active ${bgClass}`;
+            toast.innerHTML = `
+                ${icon}
+                <span class="text-sm font-medium">${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('toast-enter-active');
+                toast.classList.add('toast-leave-active');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300); 
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderAssociados();
+            renderUsuariosSistema();
+        });
+    </script>
+</body>
+</html>
